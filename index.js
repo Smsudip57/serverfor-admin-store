@@ -6,8 +6,24 @@ const cors = require('cors');
 require('dotenv/config');
 
 
-app.use(cors());
-app.options('*', cors())
+const allowedOrigins = ['https://admin.webmedigital.com', 'https://store.webmedigital.com', 'http://localhost:3002'];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true); 
+    } else {
+      callback(new Error('Not allowed by CORS')); 
+    }
+  }
+};
+
+app.use(cors(corsOptions)); 
+app.options('*', cors(corsOptions)); 
+
+
+// app.use(cors());
+// app.options('*', cors())
 
 //middleware
 app.use(bodyParser.json());
@@ -32,6 +48,7 @@ const bannersSchema = require('./routes/banners.js');
 
 app.use("/api/user",userRoutes);
 app.use("/uploads",express.static("uploads"));
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(`/api/category`, categoryRoutes);
 app.use(`/api/products`, productRoutes);
 app.use(`/api/imageUpload`, imageUploadRoutes);

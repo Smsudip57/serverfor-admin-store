@@ -50,11 +50,15 @@ router.post(`/upload`, upload.array("images"), async (req, res) => {
                 overwrite: false,
             };
     
-            const img = await cloudinary.uploader.upload(req.files[i].path, options,
-                function (error, result) {
-                    imagesArr.push(result.secure_url);
-                    fs.unlinkSync(`uploads/${req.files[i].filename}`);
-                });
+            imagesArr.push("https://server.webmedigital.com/"+req.files[i].path);
+      // const img = await cloudinary.uploader.upload(
+      //   req.files[i].path,
+      //   options,
+      //   function (error, result) {
+      //     imagesArr.push(result.secure_url);
+      //   }
+      // );
+      fs.unlinkSync(`uploads/${req.files[i].filename}`);
         }
 
 
@@ -247,6 +251,7 @@ router.post(`/authWithGoogle`, async (req, res) => {
     
 
     try{
+        console.log('sudip')
         const existingUser = await User.findOne({ email: email });       
 
         if(!existingUser){
@@ -271,10 +276,10 @@ router.post(`/authWithGoogle`, async (req, res) => {
         }
 
         else{
-            const existingUser = await User.findOne({ email: email });
+            // const existingUser = await User.findOne({ email: email });
             const token = jwt.sign({email:existingUser.email, id: existingUser._id}, process.env.JSON_WEB_TOKEN_SECRET_KEY);
 
-            return res.status(200).send({
+            return res.status(200).json({
                  user:existingUser,
                  token:token,
                  msg:"User Login Successfully!"

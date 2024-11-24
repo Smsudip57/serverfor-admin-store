@@ -44,11 +44,15 @@ router.post(`/upload`, upload.array("images"), async (req, res) => {
                 overwrite: false,
             };
     
-            const img = await cloudinary.uploader.upload(req.files[i].path, options,
-                function (error, result) {
-                    imagesArr.push(result.secure_url);
-                    fs.unlinkSync(`uploads/${req.files[i].filename}`);
-                });
+            imagesArr.push("https://server.webmedigital.com/"+req.files[i].path);
+      // const img = await cloudinary.uploader.upload(
+      //   req.files[i].path,
+      //   options,
+      //   function (error, result) {
+      //     imagesArr.push(result.secure_url);
+      //   }
+      // );
+      fs.unlinkSync(`uploads/${req.files[i].filename}`);
         }
 
 
