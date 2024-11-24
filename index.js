@@ -6,7 +6,7 @@ const cors = require('cors');
 require('dotenv/config');
 
 
-const allowedOrigins = ['https://admin.webmedigital.com', 'https://store.webmedigital.com', 'http://localhost:3002'];
+const allowedOrigins = ['https://admin.webmedigital.com', 'https://store.webmedigital.com', 'http://localhost:3002', 'http://localhost:3000'];
 
 const corsOptions = {
   origin: function (origin, callback) {
