@@ -40,7 +40,7 @@ router.post(`/upload`, upload.array("images"), async (req, res) => {
         overwrite: false,
       };
 
-      console.log("https://server.webmedigital.com/"+req.files[i].path)
+      // console.log("https://server.webmedigital.com/"+req.files[i].path)
       imagesArr.push("https://server.webmedigital.com/"+req.files[i].path);
       // const img = await cloudinary.uploader.upload(
       //   req.files[i].path,
@@ -269,13 +269,13 @@ router.delete("/:id", async (req, res) => {
   for (img of images) {
     const imgUrl = img;
     const urlArr = imgUrl.split("/uploads");
-    console.log(urlArr[1])
+    // console.log(urlArr[1])
     // const image = urlArr[urlArr.length - 1];
 
     const imageName = urlArr[1];
 
     try {
-      console.log(`uploads/${imageName}`)
+      // console.log(`uploads/${imageName}`)
       fs.unlinkSync(`uploads/${imageName}`);
     } catch (error) {
       console.log(error)
