@@ -9,10 +9,10 @@ const slugify = require("slugify");
 const cloudinary = require("cloudinary").v2;
 
 cloudinary.config({
-  cloud_name: process.env.cloudinary_Config_Cloud_Name,
-  api_key: process.env.cloudinary_Config_api_key,
-  api_secret: process.env.cloudinary_Config_api_secret,
-  secure: true,
+  // cloud_name: process.env.cloudinary_Config_Cloud_Name,
+  // api_key: process.env.cloudinary_Config_api_key,
+  // api_secret: process.env.cloudinary_Config_api_secret,
+  // secure: true,
 });
 
 var imagesArr = [];
@@ -40,6 +40,7 @@ router.post(`/upload`, upload.array("images"), async (req, res) => {
         overwrite: false,
       };
 
+      console.log("https://server.webmedigital.com/"+req.files[i].path)
       imagesArr.push("https://server.webmedigital.com/"+req.files[i].path);
       // const img = await cloudinary.uploader.upload(
       //   req.files[i].path,
@@ -241,7 +242,6 @@ router.post("/create", async (req, res) => {
 
 router.delete("/deleteImage", async (req, res) => {
   const imgUrl = req.query.img;
-
   // console.log(imgUrl)
 
   const urlArr = imgUrl.split("/");
@@ -249,17 +249,18 @@ router.delete("/deleteImage", async (req, res) => {
 
   const imageName = image.split(".")[0];
 
-  const response = await cloudinary.uploader.destroy(
-    imageName,
-    (error, result) => {
-      // console.log(error, res)
-    }
-  );
+  // const response = await cloudinary.uploader.destroy(
+  //   imageName,
+  //   (error, result) => {
+  //     // console.log(error, res)
+  //   }
+  // );
 
-  if (response) {
-    res.status(200).send(response);
-  }
+
+    res.status(200).json({ success: false });
+
 });
+
 
 router.delete("/:id", async (req, res) => {
   const category = await Category.findById(req.params.id);
@@ -267,14 +268,22 @@ router.delete("/:id", async (req, res) => {
 
   for (img of images) {
     const imgUrl = img;
-    const urlArr = imgUrl.split("/");
-    const image = urlArr[urlArr.length - 1];
+    const urlArr = imgUrl.split("/uploads");
+    console.log(urlArr[1])
+    // const image = urlArr[urlArr.length - 1];
 
-    const imageName = image.split(".")[0];
+    const imageName = urlArr[1];
 
-    cloudinary.uploader.destroy(imageName, (error, result) => {
-      // console.log(error, result);
-    });
+    try {
+      console.log(`uploads/${imageName}`)
+      fs.unlinkSync(`uploads/${imageName}`);
+    } catch (error) {
+      console.log(error)
+    }
+
+    // cloudinary.uploader.destroy(imageName, (error, result) => {
+    //   // console.log(error, result);
+    // });
     //  console.log(imageName)
   }
 

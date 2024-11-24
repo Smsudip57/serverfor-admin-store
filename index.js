@@ -48,7 +48,7 @@ const bannersSchema = require('./routes/banners.js');
 
 app.use("/api/user",userRoutes);
 app.use("/uploads",express.static("uploads"));
-// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(`/api/category`, categoryRoutes);
 app.use(`/api/products`, productRoutes);
 app.use(`/api/imageUpload`, imageUploadRoutes);
