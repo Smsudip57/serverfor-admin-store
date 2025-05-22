@@ -45,7 +45,7 @@ router.post(`/upload`, upload.array("images"), async (req, res) => {
         overwrite: false,
       };
 
-      imagesArr.push("https://server.webmedigital.com/"+req.files[i].path);
+      imagesArr.push("https://server.webmedigital.com/" + req.files[i].path);
       // const img = await cloudinary.uploader.upload(
       //   req.files[i].path,
       //   options,
@@ -79,20 +79,20 @@ router.get(`/`, async (req, res) => {
   }
 
   let productList = [];
-if(req.query.location!==null && req.query.location!==undefined && req.query.location!==""){
-  productList = await Product.find({ location: req.query.location })
-  .populate("category")
-  .skip((page - 1) * perPage)
-  .limit(perPage)
-  .exec();
-}else{
-  productList = await Product.find(req.query)
-    .populate("category")
-    .skip((page - 1) * perPage)
-    .limit(perPage)
-    .exec();
-}
-  
+  if (req.query.location !== null && req.query.location !== undefined && req.query.location !== "") {
+    productList = await Product.find({ location: req.query.location })
+      .populate("category")
+      .skip((page - 1) * perPage)
+      .limit(perPage)
+      .exec();
+  } else {
+    productList = await Product.find(req.query)
+      .populate("category")
+      .skip((page - 1) * perPage)
+      .limit(perPage)
+      .exec();
+  }
+
 
   return res.status(200).json({
     products: productList,
@@ -113,16 +113,21 @@ router.get(`/catName`, async (req, res) => {
 
   let productList = [];
 
+  const queryparams = {}
+
+  if (req.query.catName !== "" && req.query.catName !== undefined) {
+    queryparams.catName = req.query.catName
+  }
+  if (req.query.location !== "" && req.query.location !== undefined) {
+    queryparams.location = req.query.location
+  }
+
   if (req.query.page !== "" && req.query.perPage !== "") {
-    productList = await Product.find({
-      location: req.query.location,
-      catName: req.query.catName,
-    })
+    productList = await Product.find(queryparams)
       .populate("category")
       .skip((page - 1) * perPage)
       .limit(perPage)
       .exec();
-
     return res.status(200).json({
       products: productList,
       totalPages: totalPages,
@@ -133,7 +138,6 @@ router.get(`/catName`, async (req, res) => {
       location: req.query.location,
       catName: req.query.catName,
     });
-
     return res.status(200).json({
       products: productList,
     });
@@ -162,23 +166,23 @@ router.get(`/catId`, async (req, res) => {
       .skip((page - 1) * perPage)
       .limit(perPage)
       .exec();
-  
+
     return res.status(200).json({
       products: productList,
       totalPages: totalPages,
       page: page,
     });
   }
-else{
-  productList = await Product.find({
-    location: req.query.location,
-    catId: req.query.catId,
-  })
+  else {
+    productList = await Product.find({
+      location: req.query.location,
+      catId: req.query.catId,
+    })
 
-  return res.status(200).json({
-    products: productList,
-  });
-}
+    return res.status(200).json({
+      products: productList,
+    });
+  }
 
 });
 
@@ -203,24 +207,24 @@ router.get(`/subCatId`, async (req, res) => {
       .skip((page - 1) * perPage)
       .limit(perPage)
       .exec();
-  
+
     return res.status(200).json({
       products: productList,
       totalPages: totalPages,
       page: page,
     });
-  }else{
+  } else {
     productList = await Product.find({
       location: req.query.location,
       subCatId: req.query.subCatId,
     })
-  
+
     return res.status(200).json({
       products: productList,
     });
   }
 
- 
+
 });
 
 router.get(`/fiterByPrice`, async (req, res) => {
@@ -237,7 +241,7 @@ router.get(`/fiterByPrice`, async (req, res) => {
 
 
 
-  if (req.query.catId !== ""  && req.query.catId !== undefined) {
+  if (req.query.catId !== "" && req.query.catId !== undefined) {
     if (req.query.page !== "" && req.query.perPage !== "") {
       productList = await Product.find({
         catId: req.query.catId,
@@ -247,13 +251,13 @@ router.get(`/fiterByPrice`, async (req, res) => {
         .skip((page - 1) * perPage)
         .limit(perPage)
         .exec();
-    }else{
+    } else {
       productList = await Product.find({
         catId: req.query.catId,
         location: req.query.location,
       })
     }
- 
+
   } else if (req.query.subCatId !== "" && req.query.subCatId !== undefined) {
     if (req.query.page !== "" && req.query.perPage !== "") {
       productList = await Product.find({
@@ -264,13 +268,13 @@ router.get(`/fiterByPrice`, async (req, res) => {
         .skip((page - 1) * perPage)
         .limit(perPage)
         .exec();
-    }else{
+    } else {
       productList = await Product.find({
         subCatId: req.query.subCatId,
         location: req.query.location,
       })
     }
-   
+
   }
 
   const filteredProducts = productList.filter((product) => {
@@ -313,14 +317,14 @@ router.get(`/rating`, async (req, res) => {
         .skip((page - 1) * perPage)
         .limit(perPage)
         .exec();
-    }else{
+    } else {
       productList = await Product.find({
         catId: req.query.catId,
         rating: req.query.rating,
         location: req.query.location,
       })
     }
- 
+
   } else if (req.query.subCatId !== "" && req.query.subCatId !== undefined) {
     if (req.query.page !== "" && req.query.perPage !== "") {
       productList = await Product.find({
@@ -332,14 +336,14 @@ router.get(`/rating`, async (req, res) => {
         .skip((page - 1) * perPage)
         .limit(perPage)
         .exec();
-    }else{
+    } else {
       productList = await Product.find({
         subCatId: req.query.subCatId,
         rating: req.query.rating,
         location: req.query.location,
       })
     }
-   
+
   }
 
   return res.status(200).json({
@@ -512,7 +516,7 @@ router.delete("/deleteImage", async (req, res) => {
 
   const response = await cloudinary.uploader.destroy(
     imageName,
-    (error, result) => {}
+    (error, result) => { }
   );
 
   if (response) {
@@ -542,16 +546,16 @@ router.delete("/:id", async (req, res) => {
 
   const deletedProduct = await Product.findByIdAndDelete(req.params.id);
 
-  const myListItems = await MyList.find({productId:req.params.id})
-  
-  for(var i=0; i<myListItems.length; i++){
+  const myListItems = await MyList.find({ productId: req.params.id })
+
+  for (var i = 0; i < myListItems.length; i++) {
     await MyList.findByIdAndDelete(myListItems[i].id);
   }
 
-  
-  const cartItems = await Cart.find({productId:req.params.id})
-  
-  for(var i=0; i<cartItems.length; i++){
+
+  const cartItems = await Cart.find({ productId: req.params.id })
+
+  for (var i = 0; i < cartItems.length; i++) {
     await Cart.findByIdAndDelete(cartItems[i].id);
   }
 
