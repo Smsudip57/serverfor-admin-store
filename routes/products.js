@@ -1,7 +1,7 @@
 const { Category } = require("../models/category.js");
 const { Product } = require("../models/products.js");
-const { MyList } = require('../models/myList');
-const { Cart } = require('../models/cart');
+const { MyList } = require("../models/myList");
+const { Cart } = require("../models/cart");
 const { RecentlyViewd } = require("../models/recentlyViewd.js");
 const { ImageUpload } = require("../models/imageUpload.js");
 const express = require("express");
@@ -68,37 +68,100 @@ router.post(`/upload`, upload.array("images"), async (req, res) => {
   }
 });
 
+router.get("/getbytag", async (req, res) => {
+  const { tag } = req.query;
+
+  if (!tag) {
+    return res.status(400).json({ message: "Tag is required" });
+  }
+
+  try {
+    const products = await Product.find({ webmetag: tag });
+    return res.status(200).json(products);
+  } catch (error) {
+    console.error("Error fetching products by tag:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 router.get(`/`, async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const perPage = parseInt(req.query.perPage);
-  const totalPosts = await Product.countDocuments();
-  const totalPages = Math.ceil(totalPosts / perPage);
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const perPage = parseInt(req.query.perPage) || 10; // Add default value
 
-  if (page > totalPages) {
-    return res.status(404).json({ message: "Page not found" });
-  }
+    // Validate perPage to prevent division by zero
+    if (perPage <= 0) {
+      return res.status(400).json({
+        message: "perPage must be a positive number",
+        success: false,
+      });
+    }
 
-  let productList = [];
-  if (req.query.location !== null && req.query.location !== undefined && req.query.location !== "") {
-    productList = await Product.find({ location: req.query.location })
+    const totalPosts = await Product.countDocuments();
+    const totalPages = Math.ceil(totalPosts / perPage);
+
+    // Handle case where page exceeds total pages
+    if (page > totalPages && totalPages > 0) {
+      return res.status(404).json({
+        message: "Page not found",
+        success: false,
+      });
+    }
+
+    let productList = [];
+    let query = {};
+
+    // Build query object properly
+    if (
+      req.query.location &&
+      req.query.location !== null &&
+      req.query.location !== undefined &&
+      req.query.location !== "" &&
+      req.query.location !== "All"
+    ) {
+      query.location = req.query.location;
+    }
+
+    // Add other query parameters if needed
+    if (req.query.catId && req.query.catId !== "") {
+      query.catId = req.query.catId;
+    }
+
+    if (req.query.catName && req.query.catName !== "") {
+      query.catName = req.query.catName;
+    }
+
+    if (req.query.subCatId && req.query.subCatId !== "") {
+      query.subCatId = req.query.subCatId;
+    }
+
+    if (req.query.isFeatured !== undefined) {
+      query.isFeatured = req.query.isFeatured === "true";
+    }
+
+    // Execute query
+    productList = await Product.find(query)
       .populate("category")
       .skip((page - 1) * perPage)
       .limit(perPage)
       .exec();
-  } else {
-    productList = await Product.find(req.query)
-      .populate("category")
-      .skip((page - 1) * perPage)
-      .limit(perPage)
-      .exec();
+
+    return res.status(200).json({
+      success: true,
+      products: productList,
+      totalPages: totalPages,
+      currentPage: page,
+      totalProducts: totalPosts,
+      productsPerPage: perPage,
+    });
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
-
-
-  return res.status(200).json({
-    products: productList,
-    totalPages: totalPages,
-    page: page,
-  });
 });
 
 router.get(`/catName`, async (req, res) => {
@@ -113,13 +176,13 @@ router.get(`/catName`, async (req, res) => {
 
   let productList = [];
 
-  const queryparams = {}
+  const queryparams = {};
 
   if (req.query.catName !== "" && req.query.catName !== undefined) {
-    queryparams.catName = req.query.catName
+    queryparams.catName = req.query.catName;
   }
   if (req.query.location !== "" && req.query.location !== undefined) {
-    queryparams.location = req.query.location
+    queryparams.location = req.query.location;
   }
 
   if (req.query.page !== "" && req.query.perPage !== "") {
@@ -156,7 +219,6 @@ router.get(`/catId`, async (req, res) => {
 
   let productList = [];
 
-
   if (req.query.page !== "" && req.query.perPage !== "") {
     productList = await Product.find({
       location: req.query.location,
@@ -172,18 +234,16 @@ router.get(`/catId`, async (req, res) => {
       totalPages: totalPages,
       page: page,
     });
-  }
-  else {
+  } else {
     productList = await Product.find({
       location: req.query.location,
       catId: req.query.catId,
-    })
+    });
 
     return res.status(200).json({
       products: productList,
     });
   }
-
 });
 
 router.get(`/subCatId`, async (req, res) => {
@@ -217,14 +277,12 @@ router.get(`/subCatId`, async (req, res) => {
     productList = await Product.find({
       location: req.query.location,
       subCatId: req.query.subCatId,
-    })
+    });
 
     return res.status(200).json({
       products: productList,
     });
   }
-
-
 });
 
 router.get(`/fiterByPrice`, async (req, res) => {
@@ -238,8 +296,6 @@ router.get(`/fiterByPrice`, async (req, res) => {
   }
 
   let productList = [];
-
-
 
   if (req.query.catId !== "" && req.query.catId !== undefined) {
     if (req.query.page !== "" && req.query.perPage !== "") {
@@ -255,9 +311,8 @@ router.get(`/fiterByPrice`, async (req, res) => {
       productList = await Product.find({
         catId: req.query.catId,
         location: req.query.location,
-      })
+      });
     }
-
   } else if (req.query.subCatId !== "" && req.query.subCatId !== undefined) {
     if (req.query.page !== "" && req.query.perPage !== "") {
       productList = await Product.find({
@@ -272,9 +327,8 @@ router.get(`/fiterByPrice`, async (req, res) => {
       productList = await Product.find({
         subCatId: req.query.subCatId,
         location: req.query.location,
-      })
+      });
     }
-
   }
 
   const filteredProducts = productList.filter((product) => {
@@ -322,9 +376,8 @@ router.get(`/rating`, async (req, res) => {
         catId: req.query.catId,
         rating: req.query.rating,
         location: req.query.location,
-      })
+      });
     }
-
   } else if (req.query.subCatId !== "" && req.query.subCatId !== undefined) {
     if (req.query.page !== "" && req.query.perPage !== "") {
       productList = await Product.find({
@@ -341,9 +394,8 @@ router.get(`/rating`, async (req, res) => {
         subCatId: req.query.subCatId,
         rating: req.query.rating,
         location: req.query.location,
-      })
+      });
     }
-
   }
 
   return res.status(200).json({
@@ -439,56 +491,78 @@ router.post(`/recentlyViewd`, async (req, res) => {
 });
 
 router.post(`/create`, async (req, res) => {
-  const category = await Category.findById(req.body.category);
-  if (!category) {
-    return res.status(404).send("invalid Category!");
-  }
+  try {
+    const category = await Category.findById(req.body.category);
+    if (!category) {
+      return res.status(404).json({
+        message: "Invalid Category!",
+        success: false,
+      });
+    }
 
-  const images_Array = [];
-  const uploadedImages = await ImageUpload.find();
+    const images_Array = [];
+    const uploadedImages = await ImageUpload.find();
 
-  const images_Arr = uploadedImages?.map((item) => {
-    item.images?.map((image) => {
-      images_Array.push(image);
-      console.log(image);
+    uploadedImages?.forEach((item) => {
+      item.images?.forEach((image) => {
+        images_Array.push(image);
+      });
     });
-  });
 
-  product = new Product({
-    name: req.body.name,
-    description: req.body.description,
-    images: images_Array,
-    brand: req.body.brand,
-    price: req.body.price,
-    oldPrice: req.body.oldPrice,
-    catId: req.body.catId,
-    catName: req.body.catName,
-    subCat: req.body.subCat,
-    subCatId: req.body.subCatId,
-    subCatName: req.body.subCatName,
-    category: req.body.category,
-    countInStock: req.body.countInStock,
-    rating: req.body.rating,
-    isFeatured: req.body.isFeatured,
-    discount: req.body.discount,
-    productRam: req.body.productRam,
-    size: req.body.size,
-    productWeight: req.body.productWeight,
-    location: req.body.location !== "" ? req.body.location : "All",
-  });
+    if (!req.body.name || !req.body.description || !req.body.countInStock) {
+      return res.status(400).json({
+        message: "Name, description, and countInStock are required fields!",
+        success: false,
+      });
+    }
 
-  product = await product.save();
+    const product = new Product({
+      name: req.body.name,
+      description: req.body.description,
+      images: images_Array,
+      webmetag: req.body.webmetag || "",
+      brand: req.body.brand || "",
+      price: req.body.price || 0,
+      oldPrice: req.body.oldPrice || 0,
+      catName: req.body.catName || "",
+      catId: req.body.catId || "",
+      subCatId: req.body.subCatId || "",
+      subCat: req.body.subCat || "",
+      subCatName: req.body.subCatName || "",
+      category: req.body.category,
+      countInStock: req.body.countInStock,
+      rating: req.body.rating || 0,
+      isFeatured: req.body.isFeatured || false,
+      discount: req.body.discount || 0,
+      productRam: req.body.productRam || [],
+      size: req.body.size || [],
+      productWeight: req.body.productWeight || [],
+      location: req.body.location || "All",
+    });
 
-  if (!product) {
-    res.status(500).json({
-      error: err,
+    const savedProduct = await product.save();
+
+    if (!savedProduct) {
+      return res.status(500).json({
+        message: "Product could not be created!",
+        success: false,
+      });
+    }
+
+    imagesArr = [];
+
+    return res.status(201).json({
+      message: "Product created successfully!",
+      success: true,
+      product: savedProduct,
+    });
+  } catch (error) {
+    console.error("Error creating product:", error);
+    return res.status(500).json({
+      message: error.message || "Internal server error",
       success: false,
     });
   }
-
-  imagesArr = [];
-
-  res.status(201).json(product);
 });
 
 router.get("/:id", async (req, res) => {
@@ -516,7 +590,7 @@ router.delete("/deleteImage", async (req, res) => {
 
   const response = await cloudinary.uploader.destroy(
     imageName,
-    (error, result) => { }
+    (error, result) => {}
   );
 
   if (response) {
@@ -546,14 +620,13 @@ router.delete("/:id", async (req, res) => {
 
   const deletedProduct = await Product.findByIdAndDelete(req.params.id);
 
-  const myListItems = await MyList.find({ productId: req.params.id })
+  const myListItems = await MyList.find({ productId: req.params.id });
 
   for (var i = 0; i < myListItems.length; i++) {
     await MyList.findByIdAndDelete(myListItems[i].id);
   }
 
-
-  const cartItems = await Cart.find({ productId: req.params.id })
+  const cartItems = await Cart.find({ productId: req.params.id });
 
   for (var i = 0; i < cartItems.length; i++) {
     await Cart.findByIdAndDelete(cartItems[i].id);
@@ -573,49 +646,78 @@ router.delete("/:id", async (req, res) => {
 });
 
 router.put("/:id", async (req, res) => {
-  const product = await Product.findByIdAndUpdate(
-    req.params.id,
-    {
-      name: req.body.name,
-      subCat: req.body.subCat,
-      description: req.body.description,
-      images: req.body.images,
-      brand: req.body.brand,
-      price: req.body.price,
-      oldPrice: req.body.oldPrice,
-      catId: req.body.catId,
-      subCat: req.body.subCat,
-      subCatId: req.body.subCatId,
-      subCatName: req.body.subCatName,
-      catName: req.body.catName,
-      category: req.body.category,
-      countInStock: req.body.countInStock,
-      rating: req.body.rating,
-      numReviews: req.body.numReviews,
-      isFeatured: req.body.isFeatured,
-      productRam: req.body.productRam,
-      size: req.body.size,
-      productWeight: req.body.productWeight,
-      location: req.body.location,
-    },
-    { new: true }
-  );
+  try {
+    // Validate if product exists
+    const existingProduct = await Product.findById(req.params.id);
+    if (!existingProduct) {
+      return res.status(404).json({
+        message: "Product not found!",
+        success: false,
+      });
+    }
 
-  if (!product) {
-    res.status(404).json({
-      message: "the product can not be updated!",
-      status: false,
+    // Validate category if provided
+    if (req.body.category) {
+      const category = await Category.findById(req.body.category);
+      if (!category) {
+        return res.status(404).json({
+          message: "Invalid Category!",
+          success: false,
+        });
+      }
+    }
+
+    // Update product with new schema fields
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      {
+        name: req.body.name,
+        description: req.body.description,
+        images: req.body.images,
+        webmetag: req.body.webmetag || "",
+        brand: req.body.brand || "",
+        price: req.body.price || 0,
+        oldPrice: req.body.oldPrice || 0,
+        catName: req.body.catName || "",
+        catId: req.body.catId || "",
+        subCatId: req.body.subCatId || "",
+        subCat: req.body.subCat || "",
+        subCatName: req.body.subCatName || "",
+        category: req.body.category,
+        countInStock: req.body.countInStock,
+        rating: req.body.rating || 0,
+        isFeatured: req.body.isFeatured || false,
+        discount: req.body.discount || 0,
+        productRam: req.body.productRam || [],
+        size: req.body.size || [],
+        productWeight: req.body.productWeight || [],
+        location: req.body.location || "All",
+      },
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(500).json({
+        message: "Product could not be updated!",
+        success: false,
+      });
+    }
+
+    // Clear images array after successful update
+    imagesArr = [];
+
+    return res.status(200).json({
+      message: "Product updated successfully!",
+      success: true,
+      product: product,
+    });
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return res.status(500).json({
+      message: error.message || "Internal server error",
+      success: false,
     });
   }
-
-  imagesArr = [];
-
-  res.status(200).json({
-    message: "the product is updated!",
-    status: true,
-  });
-
-  //res.send(product);
 });
 
 // router.get(`/`, async (req, res) => {

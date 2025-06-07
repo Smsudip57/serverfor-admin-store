@@ -15,6 +15,10 @@ const productSchema = mongoose.Schema({
             required: true
         }
     ],
+    webmetag: {
+        type: String,
+        default: ''
+    },
     brand: {
         type: String,
         default: ''
