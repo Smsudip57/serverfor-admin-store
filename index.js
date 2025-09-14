@@ -1,26 +1,31 @@
-const express = require('express');
+const express = require("express");
 const app = express();
-const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
-const cors = require('cors');
-require('dotenv/config');
+const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
+const cors = require("cors");
+require("dotenv/config");
 
-
-const allowedOrigins = ['https://admin.webmedigital.com', 'https://store.webmedigital.com', 'http://localhost:3002', 'http://localhost:3000', "https://webmedigital.com","https://www.webmedigital.com'"];
+const allowedOrigins = [
+  "https://admin.webmedigital.com",
+  "https://store.webmedigital.com",
+  "http://localhost:3001",
+  "http://localhost:3000",
+  "https://webmedigital.com",
+  "https://www.webmedigital.com'",
+];
 
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true); 
+      callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS')); 
+      callback(new Error("Not allowed by CORS"));
     }
-  }
+  },
 };
 
-app.use(cors(corsOptions)); 
-app.options('*', cors(corsOptions)); 
-
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // app.use(cors());
 // app.options('*', cors())
@@ -29,25 +34,24 @@ app.options('*', cors(corsOptions));
 app.use(bodyParser.json());
 app.use(express.json());
 
-
 //Routes
-const userRoutes = require('./routes/user.js');
-const categoryRoutes = require('./routes/categories');
-const productRoutes = require('./routes/products');
-const imageUploadRoutes = require('./helper/imageUpload.js');
-const productWeightRoutes = require('./routes/productWeight.js');
-const productRAMSRoutes = require('./routes/productRAMS.js');
-const productSIZESRoutes = require('./routes/productSize.js');
-const productReviews = require('./routes/productReviews.js');
-const cartSchema = require('./routes/cart.js');
-const myListSchema = require('./routes/myList.js');
-const ordersSchema = require('./routes/orders.js');
-const homeBannerSchema = require('./routes/homeBanner.js');
-const searchRoutes = require('./routes/search.js');
-const bannersSchema = require('./routes/banners.js');
+const userRoutes = require("./routes/user.js");
+const categoryRoutes = require("./routes/categories");
+const productRoutes = require("./routes/products");
+const imageUploadRoutes = require("./helper/imageUpload.js");
+const productWeightRoutes = require("./routes/productWeight.js");
+const productRAMSRoutes = require("./routes/productRAMS.js");
+const productSIZESRoutes = require("./routes/productSize.js");
+const productReviews = require("./routes/productReviews.js");
+const cartSchema = require("./routes/cart.js");
+const myListSchema = require("./routes/myList.js");
+const ordersSchema = require("./routes/orders.js");
+const homeBannerSchema = require("./routes/homeBanner.js");
+const searchRoutes = require("./routes/search.js");
+const bannersSchema = require("./routes/banners.js");
 
-app.use("/api/user",userRoutes);
-app.use("/uploads",express.static("uploads"));
+app.use("/api/user", userRoutes);
+app.use("/uploads", express.static("uploads"));
 // // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(`/api/category`, categoryRoutes);
 app.use(`/api/products`, productRoutes);
@@ -62,25 +66,23 @@ app.use(`/api/orders`, ordersSchema);
 app.use(`/api/homeBanner`, homeBannerSchema);
 app.use(`/api/search`, searchRoutes);
 app.use(`/api/banners`, bannersSchema);
-app.get('/', async (req, res) => {
-    return res.status(200).json({ msg: "server is working properly" });
+app.get("/", async (req, res) => {
+  return res.status(200).json({ msg: "server is working properly" });
 });
 
-
-
-
 //Database
-mongoose.connect(process.env.CONNECTION_STRING, {
+mongoose
+  .connect(process.env.CONNECTION_STRING, {
     useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-    .then(() => {
-        console.log('Database Connection is ready...');
-        //Server
-        app.listen(process.env.PORT, () => {
-            console.log(`server is running http://localhost:${process.env.PORT}`);
-        })
-    })
-    .catch((err) => {
-        console.log(err);
-    })
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log("Database Connection is ready...");
+    //Server
+    app.listen(process.env.PORT, () => {
+      console.log(`server is running http://localhost:${process.env.PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.log(err);
+  });
