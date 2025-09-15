@@ -278,7 +278,7 @@ router.post("/create", async (req, res) => {
   }
 });
 
-router.post("/webhook/ziina", express.json(), (req, res) => {
+router.post("/webhook/ziina", (req, res) => {
   try {
     ZiinaHook(req, res);
   } catch (error) {
