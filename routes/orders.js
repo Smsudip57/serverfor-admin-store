@@ -33,14 +33,14 @@ const ZiinaPay = async (data) => {
   try {
     // Create payment intent with Ziina API
     const paymentData = {
-      amount: data.amount * 100, 
-      currency_code: "AED", 
+      amount: data.amount * 100,
+      currency_code: "AED",
       message: `Order payment for ${data.name}`,
       success_url: `${process.env.CLIENT_BASE_URL}/payment/success`,
       cancel_url: `${process.env.CLIENT_BASE_URL}/payment/cancel`,
       failure_url: `${process.env.CLIENT_BASE_URL}/payment/failure`,
-      test: process.env.NODE_ENV !== "production", 
-      expiry: (Date.now() + 24 * 60 * 60 * 1000).toString(), 
+      test: process.env.NODE_ENV !== "production",
+      expiry: (Date.now() + 24 * 60 * 60 * 1000).toString(),
       allow_tips: false,
     };
 
@@ -306,15 +306,33 @@ router.post(
   express.raw({ type: "application/json" }),
   (req, res) => {
     try {
+      console.log("Raw webhook body type:", typeof req.body);
+      console.log("Raw webhook body:", req.body);
+
       const rawBody = req.body.toString("utf8");
-      req.body = JSON.parse(rawBody);
+      console.log("Raw body as string:", rawBody);
+
+      // Check if rawBody is already a valid JSON string
+      let parsedBody;
+      try {
+        parsedBody = JSON.parse(rawBody);
+      } catch (parseError) {
+        console.error("Failed to parse webhook body:", parseError);
+        console.error("Raw body that failed to parse:", rawBody);
+        return res.status(400).json({
+          success: false,
+          message: "Invalid JSON payload",
+        });
+      }
+
+      req.body = parsedBody;
       req.rawBody = rawBody;
       ZiinaHook(req, res);
     } catch (error) {
-      console.error("Failed to parse webhook body:", error);
+      console.error("Failed to process webhook:", error);
       res.status(400).json({
         success: false,
-        message: "Invalid JSON payload",
+        message: "Webhook processing failed",
       });
     }
   }
