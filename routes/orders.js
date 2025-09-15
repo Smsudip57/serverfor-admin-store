@@ -33,7 +33,7 @@ const ZiinaPay = async (data) => {
   try {
     // Create payment intent with Ziina API
     const paymentData = {
-      amount: data.amount,
+      amount: data.amount * 100, // Convert AED to fils (smallest currency unit)
       currency_code: "AED", // or get from data.currency
       message: `Order payment for ${data.name}`,
       success_url: `${process.env.CLIENT_BASE_URL}/payment/success`,
