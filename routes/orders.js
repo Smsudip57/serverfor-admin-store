@@ -144,14 +144,23 @@ const ZiinaHook = async (req, res) => {
       );
     }
 
-    if (event.object === "payment_intent" && event.status && event.id) {
-      console.log(`Payment Intent ${event.id} updated to ${event.status}`);
+    // Handle Ziina webhook structure: { event: "payment_intent.status.updated", data: {...} }
+    if (
+      event.event === "payment_intent.status.updated" &&
+      event.data &&
+      event.data.id &&
+      event.data.status
+    ) {
+      const paymentData = event.data;
+      console.log(
+        `Payment Intent ${paymentData.id} updated to ${paymentData.status}`
+      );
 
       // Find the order by payment ID
-      const order = await Orders.findOne({ paymentId: event.id });
+      const order = await Orders.findOne({ paymentId: paymentData.id });
 
       if (!order) {
-        console.log(`No order found for payment ID: ${event.id}`);
+        console.log(`No order found for payment ID: ${paymentData.id}`);
         return res.status(404).json({
           success: false,
           message: "Order not found",
@@ -161,7 +170,8 @@ const ZiinaHook = async (req, res) => {
       let newStatus;
       let shouldRemoveExpiry = false;
 
-      switch (event.status) {
+      switch (paymentData.status) {
+        case "completed":
         case "succeeded":
           // ✅ mark order as confirmed/paid
           newStatus = "confirmed";
@@ -186,7 +196,7 @@ const ZiinaHook = async (req, res) => {
           break;
 
         default:
-          console.log("Unhandled payment status:", event.status);
+          console.log("Unhandled payment status:", paymentData.status);
           return res.status(200).json({
             success: true,
             message: "Status not handled",
@@ -210,7 +220,7 @@ const ZiinaHook = async (req, res) => {
       console.log(`Order ${order._id} updated successfully:`, {
         previousStatus: order.status,
         newStatus: newStatus,
-        paymentId: event.id,
+        paymentId: paymentData.id,
       });
 
       return res.status(200).json({
@@ -220,7 +230,7 @@ const ZiinaHook = async (req, res) => {
         status: updatedOrder.status,
       });
     } else {
-      console.log("Invalid webhook payload:", event);
+      console.log("Invalid webhook payload or event type:", event);
       return res.status(400).json({
         success: false,
         message: "Invalid webhook payload",
@@ -301,42 +311,21 @@ router.post("/create", async (req, res) => {
   }
 });
 
-router.post(
-  "/webhook/ziina",
-  express.raw({ type: "application/json" }),
-  (req, res) => {
-    try {
-      console.log("Raw webhook body type:", typeof req.body);
-      console.log("Raw webhook body:", req.body);
+router.post("/webhook/ziina", express.json(), (req, res) => {
+  try {
+    console.log("Webhook body:", req.body);
+    console.log("Headers:", req.headers);
+    req.rawBody = JSON.stringify(req.body);
 
-      const rawBody = req.body.toString("utf8");
-      console.log("Raw body as string:", rawBody);
-
-      // Check if rawBody is already a valid JSON string
-      let parsedBody;
-      try {
-        parsedBody = JSON.parse(rawBody);
-      } catch (parseError) {
-        console.error("Failed to parse webhook body:", parseError);
-        console.error("Raw body that failed to parse:", rawBody);
-        return res.status(400).json({
-          success: false,
-          message: "Invalid JSON payload",
-        });
-      }
-
-      req.body = parsedBody;
-      req.rawBody = rawBody;
-      ZiinaHook(req, res);
-    } catch (error) {
-      console.error("Failed to process webhook:", error);
-      res.status(400).json({
-        success: false,
-        message: "Webhook processing failed",
-      });
-    }
+    ZiinaHook(req, res);
+  } catch (error) {
+    console.error("Failed to process webhook:", error);
+    res.status(400).json({
+      success: false,
+      message: "Webhook processing failed",
+    });
   }
-);
+});
 
 router.delete("/:id", async (req, res) => {
   const deletedOrder = await Orders.findByIdAndDelete(req.params.id);
