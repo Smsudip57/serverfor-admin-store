@@ -105,7 +105,6 @@ const ZiinaPay = async (data) => {
 
 const ZiinaHook = async (req, res) => {
   try {
-    console.log("headers", req.headers);
     const clientIP =
       req.headers["x-real-ip"] ||
       req.headers["x-forwarded-for"]?.split(",")[0]?.trim();
