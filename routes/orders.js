@@ -40,7 +40,7 @@ const ZiinaPay = async (data) => {
       cancel_url: `${process.env.CLIENT_BASE_URL}/payment/cancel`,
       failure_url: `${process.env.CLIENT_BASE_URL}/payment/failure`,
       test: process.env.NODE_ENV !== "production", // true for development
-      expiry: Math.floor((Date.now() + 24 * 60 * 60 * 1000) / 1000), // 24 hours from now as Unix timestamp
+      expiry: Math.floor((Date.now() + 24 * 60 * 60 * 1000) / 1000).toString(), // 24 hours from now as Unix timestamp string
       allow_tips: false,
     };
 
