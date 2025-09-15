@@ -145,13 +145,10 @@ const ZiinaHook = async (req, res) => {
       if (!isValidSignature) {
         console.error("Invalid webhook signature");
         console.error("Expected signature computation failed");
-
-        // For now, let's skip signature verification to test the rest
-        console.warn("TEMPORARILY SKIPPING SIGNATURE VERIFICATION FOR TESTING");
-        // return res.status(401).json({
-        //   success: false,
-        //   message: "Invalid signature",
-        // });
+        return res.status(401).json({
+          success: false,
+          message: "Invalid signature",
+        });
       } else {
         console.log("Webhook signature verified successfully");
       }
@@ -328,7 +325,19 @@ router.post("/create", async (req, res) => {
   }
 });
 
-router.post("/webhook/ziina", express.json(), (req, res) => {
+// Middleware to capture raw body for signature verification
+const captureRawBody = (req, res, next) => {
+  let rawBody = "";
+  req.on("data", (chunk) => {
+    rawBody += chunk;
+  });
+  req.on("end", () => {
+    req.rawBody = rawBody;
+    next();
+  });
+};
+
+router.post("/webhook/ziina", captureRawBody, express.json(), (req, res) => {
   try {
     ZiinaHook(req, res);
   } catch (error) {
