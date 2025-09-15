@@ -18,6 +18,10 @@ const verifyZiinaSignature = (rawBody, signature, secret) => {
       .update(rawBody, "utf8")
       .digest("hex");
 
+    console.log("Expected signature:", expectedSignature);
+    console.log("Received signature:", signature);
+    console.log("Signatures match:", expectedSignature === signature);
+
     // Compare signatures using secure comparison to prevent timing attacks
     return crypto.timingSafeEqual(
       Buffer.from(signature, "hex"),
