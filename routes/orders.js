@@ -60,6 +60,8 @@ const ZiinaPay = async (data) => {
     );
     const paymentIntent = await response.json();
 
+    console.log("Ziina API Response:", paymentIntent); // Debug: Log the full response
+
     if (!response.ok) {
       throw new Error(
         `Ziina API error: ${
@@ -86,13 +88,16 @@ const ZiinaPay = async (data) => {
     const savedOrder = await order.save();
 
     // Return payment URL and order info
-    return {
+    const result = {
       success: true,
       paymentUrl: paymentIntent.payment_url, // The URL user needs to visit to pay
       orderId: savedOrder._id,
       paymentIntentId: paymentIntent.id,
       message: "Payment intent created successfully",
     };
+
+    console.log("ZiinaPay result:", result); // Debug: Log what we're returning
+    return result;
   } catch (error) {
     console.error("ZiinaPay error:", error);
     return {
