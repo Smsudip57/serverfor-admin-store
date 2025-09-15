@@ -17,15 +17,6 @@ const verifyZiinaSignature = (rawBody, signature, secret) => {
       .createHmac("sha256", secret)
       .update(rawBody, "utf8")
       .digest("hex");
-    const expectedSignature1 = crypto
-      .createHmac("sha256", "ADHOEWkajsdfh!@31ukhasdfAsfuh@#$lafisdf")
-      .update(rawBody, "utf8")
-      .digest("hex");
-
-    console.log("Expected signature:", expectedSignature);
-    console.log("Expected signature 1:", expectedSignature1);
-    console.log("Received signature:", signature);
-    console.log("Signatures match:", expectedSignature === signature);
 
     // Compare signatures using secure comparison to prevent timing attacks
     return crypto.timingSafeEqual(
@@ -33,7 +24,6 @@ const verifyZiinaSignature = (rawBody, signature, secret) => {
       Buffer.from(expectedSignature, "hex")
     );
   } catch (error) {
-    console.error("Signature verification error:", error);
     return false;
   }
 };
@@ -119,27 +109,14 @@ const ZiinaHook = async (req, res) => {
     const signature = req.headers["x-hmac-signature"];
     const rawBody = req.rawBody || JSON.stringify(req.body);
 
-    console.log("Ziina webhook received:", event);
-    console.log("Headers:", req.headers);
-    console.log("Signature from header:", signature);
-    console.log("Raw body for verification:", rawBody);
-
     // Verify webhook signature if secret key is configured
     if (ZIINA_SECRET_KEY) {
       if (!signature) {
-        console.error("Missing X-Hmac-Signature header");
         return res.status(401).json({
           success: false,
           message: "Missing signature header",
         });
       }
-
-      // Debug: Show what we're computing the signature with
-      console.log(
-        "Computing signature with secret:",
-        ZIINA_SECRET_KEY ? "SECRET_SET" : "NO_SECRET"
-      );
-      console.log("Raw body length:", rawBody.length);
 
       const isValidSignature = verifyZiinaSignature(
         rawBody,
@@ -148,22 +125,11 @@ const ZiinaHook = async (req, res) => {
       );
 
       if (!isValidSignature) {
-        console.error("Invalid webhook signature");
-        console.error("Expected signature computation failed");
-
-        // For now, let's skip signature verification to test the rest
-        console.warn("TEMPORARILY SKIPPING SIGNATURE VERIFICATION FOR TESTING");
-        // return res.status(401).json({
-        //   success: false,
-        //   message: "Invalid signature",
-        // });
-      } else {
-        console.log("Webhook signature verified successfully");
+        return res.status(401).json({
+          success: false,
+          message: "Invalid signature",
+        });
       }
-    } else {
-      console.warn(
-        "ZIINA_SECRET_KEY not configured - webhook signature verification skipped"
-      );
     }
 
     // Handle Ziina webhook structure: { event: "payment_intent.status.updated", data: {...} }
@@ -174,15 +140,11 @@ const ZiinaHook = async (req, res) => {
       event.data.status
     ) {
       const paymentData = event.data;
-      console.log(
-        `Payment Intent ${paymentData.id} updated to ${paymentData.status}`
-      );
 
       // Find the order by payment ID
       const order = await Orders.findOne({ paymentId: paymentData.id });
 
       if (!order) {
-        console.log(`No order found for payment ID: ${paymentData.id}`);
         return res.status(404).json({
           success: false,
           message: "Order not found",
@@ -195,30 +157,21 @@ const ZiinaHook = async (req, res) => {
       switch (paymentData.status) {
         case "completed":
         case "succeeded":
-          // ✅ mark order as confirmed/paid
           newStatus = "confirmed";
           shouldRemoveExpiry = true;
-          console.log(
-            `Order ${order._id} payment succeeded - marking as confirmed`
-          );
           break;
 
         case "failed":
-          // ❌ mark order as failed
           newStatus = "failed";
           shouldRemoveExpiry = true;
-          console.log(`Order ${order._id} payment failed`);
           break;
 
         case "cancelled":
-          // 🚫 mark order as cancelled
           newStatus = "cancelled";
           shouldRemoveExpiry = true;
-          console.log(`Order ${order._id} payment cancelled`);
           break;
 
         default:
-          console.log("Unhandled payment status:", paymentData.status);
           return res.status(200).json({
             success: true,
             message: "Status not handled",
@@ -239,12 +192,6 @@ const ZiinaHook = async (req, res) => {
         { new: true }
       );
 
-      console.log(`Order ${order._id} updated successfully:`, {
-        previousStatus: order.status,
-        newStatus: newStatus,
-        paymentId: paymentData.id,
-      });
-
       return res.status(200).json({
         success: true,
         message: "Order updated successfully",
@@ -252,14 +199,12 @@ const ZiinaHook = async (req, res) => {
         status: updatedOrder.status,
       });
     } else {
-      console.log("Invalid webhook payload or event type:", event);
       return res.status(400).json({
         success: false,
         message: "Invalid webhook payload",
       });
     }
   } catch (error) {
-    console.error("ZiinaHook error:", error);
     return res.status(500).json({
       success: false,
       error: error.message,
