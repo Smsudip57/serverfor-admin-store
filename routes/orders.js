@@ -40,7 +40,7 @@ const ZiinaPay = async (data) => {
       cancel_url: `${process.env.CLIENT_BASE_URL}/payment/cancel`,
       failure_url: `${process.env.CLIENT_BASE_URL}/payment/failure`,
       test: process.env.NODE_ENV !== "production", // true for development
-      expiry: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
+      expiry: Math.floor((Date.now() + 24 * 60 * 60 * 1000) / 1000), // 24 hours from now as Unix timestamp
       allow_tips: false,
     };
 
@@ -299,7 +299,6 @@ router.post("/create", async (req, res) => {
     });
   }
 });
-
 
 router.post(
   "/webhook/ziina",
