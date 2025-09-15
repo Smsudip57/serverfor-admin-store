@@ -33,14 +33,14 @@ const ZiinaPay = async (data) => {
   try {
     // Create payment intent with Ziina API
     const paymentData = {
-      amount: data.amount * 100, // Convert AED to fils (smallest currency unit)
-      currency_code: "AED", // or get from data.currency
+      amount: data.amount * 100, 
+      currency_code: "AED", 
       message: `Order payment for ${data.name}`,
       success_url: `${process.env.CLIENT_BASE_URL}/payment/success`,
       cancel_url: `${process.env.CLIENT_BASE_URL}/payment/cancel`,
       failure_url: `${process.env.CLIENT_BASE_URL}/payment/failure`,
-      test: process.env.NODE_ENV !== "production", // true for development
-      expiry: (Date.now() + 24 * 60 * 60 * 1000).toString(), // 24 hours from now as timestamp in milliseconds
+      test: process.env.NODE_ENV !== "production", 
+      expiry: (Date.now() + 24 * 60 * 60 * 1000).toString(), 
       allow_tips: false,
     };
 
@@ -59,8 +59,6 @@ const ZiinaPay = async (data) => {
       options
     );
     const paymentIntent = await response.json();
-
-    console.log("Ziina API Response:", paymentIntent); // Debug: Log the full response
 
     if (!response.ok) {
       throw new Error(
@@ -90,16 +88,14 @@ const ZiinaPay = async (data) => {
     // Return payment URL and order info
     const result = {
       success: true,
-      paymentUrl: paymentIntent.payment_url, // The URL user needs to visit to pay
+      paymentUrl: paymentIntent.redirect_url, // Ziina uses redirect_url, not payment_url
       orderId: savedOrder._id,
       paymentIntentId: paymentIntent.id,
       message: "Payment intent created successfully",
     };
 
-    console.log("ZiinaPay result:", result); // Debug: Log what we're returning
     return result;
   } catch (error) {
-    console.error("ZiinaPay error:", error);
     return {
       success: false,
       error: error.message,
