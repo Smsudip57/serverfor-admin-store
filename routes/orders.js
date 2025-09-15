@@ -105,6 +105,22 @@ const ZiinaPay = async (data) => {
 
 const ZiinaHook = async (req, res) => {
   try {
+    console.log("headers", req.headers);
+    const clientIP =
+      req.headers["x-real-ip"] ||
+      req.headers["x-forwarded-for"]?.split(",")[0]?.trim();
+
+    // Ziina authorized IP addresses
+    const allowedIPs = ["3.29.184.186", "3.29.190.95", "20.233.47.127"];
+
+    // Validate IP address
+    if (!clientIP || !allowedIPs.includes(clientIP)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: Invalid IP address",
+      });
+    }
+
     const event = req.body;
     const signature = req.headers["x-hmac-signature"];
     const rawBody = req.rawBody || JSON.stringify(req.body);
@@ -132,7 +148,6 @@ const ZiinaHook = async (req, res) => {
       }
     }
 
-    // Handle Ziina webhook structure: { event: "payment_intent.status.updated", data: {...} }
     if (
       event.event === "payment_intent.status.updated" &&
       event.data &&
