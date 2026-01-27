@@ -32,7 +32,13 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB per file
+    files: 10, // Maximum 10 files per request
+  },
+});
 
 router.post(`/upload`, upload.array("images"), async (req, res) => {
   imagesArr = [];
@@ -590,7 +596,7 @@ router.delete("/deleteImage", async (req, res) => {
 
   const response = await cloudinary.uploader.destroy(
     imageName,
-    (error, result) => {}
+    (error, result) => {},
   );
 
   if (response) {
@@ -693,7 +699,7 @@ router.put("/:id", async (req, res) => {
         productWeight: req.body.productWeight || [],
         location: req.body.location || "All",
       },
-      { new: true }
+      { new: true },
     );
 
     if (!product) {

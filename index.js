@@ -31,8 +31,9 @@ app.options("*", cors(corsOptions));
 // app.options('*', cors())
 
 //middleware
-app.use(bodyParser.json());
-app.use(express.json());
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 //Routes
 const userRoutes = require("./routes/user.js");
