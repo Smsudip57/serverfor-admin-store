@@ -8,7 +8,7 @@ require("dotenv/config");
 const allowedOrigins = [
   "https://admin.webmedigital.com",
   "https://store.webmedigital.com",
-  "http://localhost:3001",
+  "http://localhost:3002",
   "http://localhost:3000",
   "https://webmedigital.com",
   "https://www.webmedigital.com'",
@@ -73,10 +73,7 @@ app.get("/", async (req, res) => {
 
 //Database
 mongoose
-  .connect(process.env.CONNECTION_STRING, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.CONNECTION_STRING)
   .then(() => {
     console.log("Database Connection is ready...");
     //Server

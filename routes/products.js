@@ -40,26 +40,21 @@ const upload = multer({
   },
 });
 
-router.post(`/upload`, upload.array("images"), async (req, res) => {
+router.post(`/upload`, upload.any(), async (req, res) => {
   imagesArr = [];
 
   try {
-    for (let i = 0; i < req.files?.length; i++) {
-      const options = {
-        use_filename: true,
-        unique_filename: false,
-        overwrite: false,
-      };
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        message: "No files uploaded",
+        success: false,
+      });
+    }
 
-      imagesArr.push("https://server.webmedigital.com/" + req.files[i].path);
-      // const img = await cloudinary.uploader.upload(
-      //   req.files[i].path,
-      //   options,
-      //   function (error, result) {
-      //     imagesArr.push(result.secure_url);
-      //   }
-      // );
-      // fs.unlinkSync(`uploads/${req.files[i].filename}`);
+    for (let i = 0; i < req.files.length; i++) {
+      const imageUrl =
+        process.env.BASE_URL + "/" + req.files[i].path.replace(/\\/g, "/");
+      imagesArr.push(imageUrl);
     }
 
     let imagesUploaded = new ImageUpload({
@@ -70,7 +65,68 @@ router.post(`/upload`, upload.array("images"), async (req, res) => {
 
     return res.status(200).json(imagesArr);
   } catch (error) {
-    console.log(error);
+    console.error("Image upload error:", error);
+    return res.status(500).json({
+      message: "Error uploading images",
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Video upload endpoint
+const ALLOWED_VIDEO_EXTENSIONS = [".mp4", ".webm", ".mov", ".avi", ".mkv"];
+
+const videoUpload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 200 * 1024 * 1024, // 200MB per file for videos
+    files: 5, // Maximum 5 videos per request
+  },
+  fileFilter: (req, file, cb) => {
+    const ext = require("path").extname(file.originalname).toLowerCase();
+    if (ALLOWED_VIDEO_EXTENSIONS.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only video files (mp4, webm, mov, avi, mkv) are allowed"));
+    }
+  },
+});
+
+var videosArr = [];
+
+router.post(`/uploadVideo`, videoUpload.any(), async (req, res) => {
+  videosArr = [];
+
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        message: "No files uploaded",
+        success: false,
+      });
+    }
+
+    for (let i = 0; i < req.files.length; i++) {
+      const videoUrl =
+        process.env.BASE_URL + "/" + req.files[i].path.replace(/\\/g, "/");
+      videosArr.push(videoUrl);
+    }
+
+    // Save videos to ImageUpload for tracking and deletion
+    let videosUploaded = new ImageUpload({
+      images: videosArr,
+    });
+
+    videosUploaded = await videosUploaded.save();
+
+    return res.status(200).json(videosArr);
+  } catch (error) {
+    console.error("Video upload error:", error);
+    return res.status(500).json({
+      message: "Video upload failed",
+      success: false,
+      error: error.message,
+    });
   }
 });
 
@@ -526,6 +582,8 @@ router.post(`/create`, async (req, res) => {
       name: req.body.name,
       description: req.body.description,
       images: images_Array,
+      videos: req.body.videos || [],
+      thumbnail: req.body.thumbnail || images_Array[0] || null,
       webmetag: req.body.webmetag || "",
       brand: req.body.brand || "",
       price: req.body.price || 0,
@@ -544,6 +602,9 @@ router.post(`/create`, async (req, res) => {
       size: req.body.size || [],
       productWeight: req.body.productWeight || [],
       location: req.body.location || "All",
+      features: req.body.features || [],
+      faq: req.body.faq || [],
+      specifications: req.body.specifications || [],
     });
 
     const savedProduct = await product.save();
@@ -680,6 +741,8 @@ router.put("/:id", async (req, res) => {
         name: req.body.name,
         description: req.body.description,
         images: req.body.images,
+        videos: req.body.videos || [],
+        thumbnail: req.body.thumbnail || null,
         webmetag: req.body.webmetag || "",
         brand: req.body.brand || "",
         price: req.body.price || 0,
@@ -698,6 +761,9 @@ router.put("/:id", async (req, res) => {
         size: req.body.size || [],
         productWeight: req.body.productWeight || [],
         location: req.body.location || "All",
+        features: req.body.features || [],
+        faq: req.body.faq || [],
+        specifications: req.body.specifications || [],
       },
       { new: true },
     );
